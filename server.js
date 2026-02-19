@@ -17,7 +17,7 @@ app.get('/config.json', (req, res) => {
     res.json({
         "workflowApiVersion": "1.1",
         "metaData": {
-            "icon": "https://ithreads.onrender.com/logo.png",
+            "icon": "https://ithreads.onrender.com/threadlogo.png",
             "category": "message"
         },
         "type": "REST",
