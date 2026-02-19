@@ -1,4 +1,5 @@
 const express = require('express');
+const path = require('path');
 const app = express();
 
 app.use(express.json());
@@ -10,6 +11,11 @@ app.use((req, res, next) => {
     res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
     if (req.method === 'OPTIONS') return res.sendStatus(200);
     next();
+});
+
+// ─── SERVE LOGO ───────────────────────────────────────────────────────────────
+app.get('/threadlogo.png', (req, res) => {
+    res.sendFile(path.join(__dirname, 'threadlogo.png'));
 });
 
 // ─── CONFIG ───────────────────────────────────────────────────────────────────
@@ -79,8 +85,6 @@ app.post('/save', (req, res) => {
 app.post('/validate', (req, res) => {
     console.log("VALIDATE called:", JSON.stringify(req.body, null, 2));
 
-    // You can add real validation logic here
-    // e.g. check if required inArguments are present
     const inArgs = req.body?.arguments?.execute?.inArguments?.[0];
 
     if (!inArgs || !inArgs.messageTitle) {
@@ -103,7 +107,7 @@ app.post('/stop', (req, res) => {
     res.status(200).json({ success: true });
 });
 
-// ─── EXECUTE (runs for every contact at journey runtime) ─────────────────────
+// ─── EXECUTE ──────────────────────────────────────────────────────────────────
 
 app.post('/execute', (req, res) => {
     console.log("EXECUTE called:", JSON.stringify(req.body, null, 2));
@@ -122,15 +126,10 @@ app.post('/execute', (req, res) => {
 
         console.log(`Processing contact — Title: ${messageTitle}, Body: ${messageBody}, Attribute: ${emailAttr}`);
 
-        // ── Put your real logic here ──────────────────────────────
-        // e.g. call Threads API, send a notification, write to DB, etc.
-        // ─────────────────────────────────────────────────────────
-
         res.status(200).json({ success: true });
 
     } catch (err) {
         console.error("EXECUTE error:", err);
-        // Always return 200 to SFMC — a non-200 marks the contact as errored
         res.status(200).json({ success: false, message: err.message });
     }
 });
