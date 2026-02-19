@@ -14,16 +14,17 @@ app.use((req, res, next) => {
 });
 
 // ─── SERVE LOGO ───────────────────────────────────────────────────────────────
-app.get('/threadlogo.png', (req, res) => {
+/*app.get('/threadlogo.png', (req, res) => {
     res.sendFile(path.join(__dirname, 'threadlogo.png'));
-});
+});*/
 
 // ─── CONFIG ───────────────────────────────────────────────────────────────────
 app.get('/config.json', (req, res) => {
     res.json({
         "workflowApiVersion": "1.1",
         "metaData": {
-            "icon": "https://ithreads.onrender.com/threadlogo.png",
+            "icon": "https://res.cloudinary.com/dwdj0l58l/image/upload/v1771527602/icons8-threads-50_i5bnnj.png",
+            "smallIcon": "https://res.cloudinary.com/dwdj0l58l/image/upload/v1771527602/icons8-threads-50_i5bnnj.png",
             "category": "message"
         },
         "type": "REST",
