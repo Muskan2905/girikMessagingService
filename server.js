@@ -1,10 +1,12 @@
 const express = require('express');
-const path = require('path');
-const app = express();
+const path    = require('path');
+const https   = require('https');
+const http    = require('http');
+const app     = express();
 
 app.use(express.json());
 
-// Allow SFMC to fetch config (CORS needed for browser requests)
+// ─── CORS ─────────────────────────────────────────────────────────────────────
 app.use((req, res, next) => {
     res.header('Access-Control-Allow-Origin', '*');
     res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
@@ -12,11 +14,6 @@ app.use((req, res, next) => {
     if (req.method === 'OPTIONS') return res.sendStatus(200);
     next();
 });
-
-// ─── SERVE LOGO ───────────────────────────────────────────────────────────────
-/*app.get('/threadlogo.png', (req, res) => {
-    res.sendFile(path.join(__dirname, 'threadlogo.png'));
-});*/
 
 // ─── CONFIG ───────────────────────────────────────────────────────────────────
 app.get('/config.json', (req, res) => {
@@ -31,7 +28,7 @@ app.get('/config.json', (req, res) => {
         "lang": {
             "en-US": {
                 "name": "iThreads Post",
-                "description": "Post a message via iThreads"
+                "description": "Send a WhatsApp message per contact via Twilio"
             }
         },
         "arguments": {
@@ -76,58 +73,79 @@ app.get('/config.json', (req, res) => {
     });
 });
 
-// ─── CONFIGURATION LIFECYCLE ENDPOINTS ───────────────────────────────────────
+// ─── LIFECYCLE ENDPOINTS ──────────────────────────────────────────────────────
 
 app.post('/save', (req, res) => {
-    console.log("SAVE called:", JSON.stringify(req.body, null, 2));
+    console.log("SAVE:", JSON.stringify(req.body, null, 2));
     res.status(200).json({ success: true });
 });
 
 app.post('/validate', (req, res) => {
-    console.log("VALIDATE called:", JSON.stringify(req.body, null, 2));
-
+    console.log("VALIDATE:", JSON.stringify(req.body, null, 2));
     const inArgs = req.body?.arguments?.execute?.inArguments?.[0];
-
-    if (!inArgs || !inArgs.messageTitle) {
-        return res.status(200).json({
-            success: false,
-            message: "Message Title is required"
-        });
+    if (!inArgs?.messageTitle) {
+        return res.status(200).json({ success: false, message: "Message Title is required" });
     }
-
+    if (!inArgs?.fromPhoneNumber || !inArgs?.toPhoneNumber) {
+        return res.status(200).json({ success: false, message: "Phone number fields must be mapped" });
+    }
     res.status(200).json({ success: true });
 });
 
 app.post('/publish', (req, res) => {
-    console.log("PUBLISH called:", JSON.stringify(req.body, null, 2));
+    console.log("PUBLISH:", JSON.stringify(req.body, null, 2));
     res.status(200).json({ success: true });
 });
 
 app.post('/stop', (req, res) => {
-    console.log("STOP called:", JSON.stringify(req.body, null, 2));
+    console.log("STOP:", JSON.stringify(req.body, null, 2));
     res.status(200).json({ success: true });
 });
 
 // ─── EXECUTE ──────────────────────────────────────────────────────────────────
+// Journey Builder calls this once per contact.
+// By the time it arrives here, SFMC has already resolved all {{Contact.Attribute.*}}
+// bindings — so fromPhoneNumber, toPhoneNumber, messageBody are real values.
+//
+// We then POST those resolved values to the SSJS CloudPage, which handles
+// the actual Twilio WhatsApp send + DE logging.
 
-app.post('/execute', (req, res) => {
-    console.log("EXECUTE called:", JSON.stringify(req.body, null, 2));
+app.post('/execute', async (req, res) => {
+    console.log("EXECUTE:", JSON.stringify(req.body, null, 2));
 
     try {
         const inArgs = req.body?.inArguments?.[0];
 
         if (!inArgs) {
-            console.error("No inArguments found in execute payload");
+            console.error("No inArguments in execute payload");
             return res.status(200).json({ success: false, message: "No inArguments" });
         }
 
-        const messageTitle = inArgs.messageTitle || "";
-        const messageBody  = inArgs.messageBody  || "";
-        const emailAttr    = inArgs.emailAttribute || "";
+        // These values are now fully resolved per-contact by SFMC
+        const messageTitle    = inArgs.messageTitle    || '';
+        const fromPhoneNumber = inArgs.fromPhoneNumber || '';
+        const toPhoneNumber   = inArgs.toPhoneNumber   || '';
+        const messageBody     = inArgs.messageBody     || '';
 
-        console.log(`Processing contact — Title: ${messageTitle}, Body: ${messageBody}, Attribute: ${emailAttr}`);
+        console.log(`Contact — Title: ${messageTitle}, From: ${fromPhoneNumber}, To: ${toPhoneNumber}`);
 
-        res.status(200).json({ success: true });
+        if (!toPhoneNumber || !fromPhoneNumber) {
+            console.error("Missing phone numbers in resolved inArguments");
+            return res.status(200).json({ success: false, message: "Phone number fields are empty after resolution" });
+        }
+
+        // ── Call the SSJS CloudPage ──────────────────────────────────────────
+        // The SSJS page reads these POST parameters and calls Twilio + logs to DE.
+        const ssjs_result = await callSsjsCloudPage({
+            messageTitle,
+            fromPhoneNumber,
+            toPhoneNumber,
+            messageBody
+        });
+
+        console.log("SSJS CloudPage response:", ssjs_result);
+
+        res.status(200).json({ success: true, ssjs: ssjs_result });
 
     } catch (err) {
         console.error("EXECUTE error:", err);
@@ -135,13 +153,60 @@ app.post('/execute', (req, res) => {
     }
 });
 
-// ─── HEALTH CHECK ─────────────────────────────────────────────────────────────
+// ─── HELPER: POST to SSJS CloudPage ──────────────────────────────────────────
+/**
+ * Sends a URL-encoded POST to your SSJS CloudPage.
+ * The CloudPage reads Request.GetFormField() for each param,
+ * builds the Twilio payload, sends the WhatsApp message, and logs to your DE.
+ *
+ * Replace SSJS_CLOUDPAGE_URL with the actual URL of your SSJS execution page.
+ */
+function callSsjsCloudPage(params) {
+    return new Promise((resolve, reject) => {
 
+        // ── REPLACE this URL with your actual SSJS execution CloudPage URL ──
+        const SSJS_CLOUDPAGE_URL = 'https://mc97sb5jfx5jwlk8yysdds5268h1.pub.sfmc-content.com/ak2mph3gijc';
+
+        const body = Object.entries(params)
+            .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`)
+            .join('&');
+
+        const urlObj = new URL(SSJS_CLOUDPAGE_URL);
+        const isHttps = urlObj.protocol === 'https:';
+        const lib = isHttps ? https : http;
+
+        const options = {
+            hostname: urlObj.hostname,
+            path:     urlObj.pathname + urlObj.search,
+            method:   'POST',
+            headers: {
+                'Content-Type':   'application/x-www-form-urlencoded',
+                'Content-Length': Buffer.byteLength(body)
+            }
+        };
+
+        const request = lib.request(options, (response) => {
+            let data = '';
+            response.on('data', chunk => data += chunk);
+            response.on('end', () => resolve({ statusCode: response.statusCode, body: data }));
+        });
+
+        request.on('error', reject);
+        request.setTimeout(9000, () => {
+            request.destroy();
+            reject(new Error('SSJS CloudPage request timed out'));
+        });
+
+        request.write(body);
+        request.end();
+    });
+}
+
+// ─── HEALTH ───────────────────────────────────────────────────────────────────
 app.get('/', (req, res) => {
-    res.status(200).json({ status: 'iThreads backend is running' });
+    res.status(200).json({ status: 'iThreads backend running' });
 });
 
 // ─── START ────────────────────────────────────────────────────────────────────
-
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`iThreads backend running on port ${PORT}`));
+app.listen(PORT, () => console.log(`iThreads backend on port ${PORT}`));
