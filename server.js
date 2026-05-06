@@ -122,17 +122,17 @@ app.post('/execute', async (req, res) => {
 
     try {
         const inArgs = req.body?.inArguments?.[0];
-
+        const contactKey = inArgs?.contactKey; //MUSKAN
         if (!inArgs) {
             console.error("No inArguments in execute payload");
             return res.status(200).json({ success: false, message: "No inArguments" });
         }
-
+        const contactData = await lookupContactInDE(contactKey); //MUSKAN
         // These values are now fully resolved per-contact by SFMC
         const messageTitle    = inArgs.messageTitle    || '';
-        const fromPhoneNumber = inArgs.fromPhoneNumber || '';
-        const toPhoneNumber   = inArgs.toPhoneNumber   || '';
-        const messageBody     = inArgs.messageBody     || '';
+        const fromPhoneNumber = contactData.FromPhoneNumber || '';//MUSKAN inArgs.fromPhoneNumber
+        const toPhoneNumber   = contactData.ToPhoneNumber   || '';//MUSKAN inArgs.toPhoneNumber
+        const messageBody     = contactData.Body     || '';//MUSKAN inArgs.messageBody
 
         console.log(`Contact — Title: ${messageTitle}, From: ${fromPhoneNumber}, To: ${toPhoneNumber}`);
 
