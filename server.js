@@ -15,6 +15,124 @@ app.use((req, res, next) => {
     next();
 });
 
+// ─── SFMC CREDENTIALS ─────────────────────────────────────────────────────────
+const SFMC_CLIENT_ID     = '4mjcni9capeumlxvreujs3fx';
+const SFMC_CLIENT_SECRET = 'SFMC_XxDYw5qbruA8UrQFu0C2Wvx5sizZfbrM48M5qSY8gZvGJMvDlGf0cfd9387';
+const SFMC_MID           = '10966026';       // replace with your actual MID
+const SFMC_SUBDOMAIN     = 'mc97sb5jfx5jwlk8yysdds5268h1';
+const SFMC_DE_EXTERNAL_KEY = 'FC88FEB4-78E7-409F-AB25-25177C4F9EB1'; // Twilio Test SMS Audience
+
+// ─── SFMC TOKEN CACHE ─────────────────────────────────────────────────────────
+let sfmcToken = null;
+let sfmcTokenExpiry = 0;
+
+async function getSfmcToken() {
+    const now = Date.now();
+    if (sfmcToken && now < sfmcTokenExpiry) {
+        return sfmcToken;
+    }
+
+    const body = JSON.stringify({
+        grant_type:    'client_credentials',
+        client_id:     SFMC_CLIENT_ID,
+        client_secret: SFMC_CLIENT_SECRET,
+        account_id:    SFMC_MID
+    });
+
+    return new Promise((resolve, reject) => {
+        const options = {
+            hostname: `${SFMC_SUBDOMAIN}.auth.marketingcloudapis.com`,
+            path:     '/v2/token',
+            method:   'POST',
+            headers: {
+                'Content-Type':   'application/json',
+                'Content-Length': Buffer.byteLength(body)
+            }
+        };
+
+        const req = https.request(options, (res) => {
+            let data = '';
+            res.on('data', chunk => data += chunk);
+            res.on('end', () => {
+                try {
+                    const parsed = JSON.parse(data);
+                    if (!parsed.access_token) {
+                        return reject(new Error('No access_token in response: ' + data));
+                    }
+                    sfmcToken = parsed.access_token;
+                    // expire 5 min before actual expiry
+                    sfmcTokenExpiry = Date.now() + ((parsed.expires_in - 300) * 1000);
+                    console.log('SFMC token obtained successfully');
+                    resolve(sfmcToken);
+                } catch (e) {
+                    reject(new Error('Token parse error: ' + e.message));
+                }
+            });
+        });
+
+        req.on('error', reject);
+        req.write(body);
+        req.end();
+    });
+}
+
+// ─── LOOKUP CONTACT IN DE ─────────────────────────────────────────────────────
+async function lookupContactInDE(contactKey) {
+    const token = await getSfmcToken();
+
+    // Use SFMC REST API to query the DE by Name (subscriber key)
+    const filter = encodeURIComponent(`Name=${contactKey}`);
+    const path = `/data/v1/customobjectdata/key/${SFMC_DE_EXTERNAL_KEY}/rowset?$filter=${filter}`;
+
+    return new Promise((resolve, reject) => {
+        const options = {
+            hostname: `${SFMC_SUBDOMAIN}.rest.marketingcloudapis.com`,
+            path:     path,
+            method:   'GET',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type':  'application/json'
+            }
+        };
+
+        const req = https.request(options, (res) => {
+            let data = '';
+            res.on('data', chunk => data += chunk);
+            res.on('end', () => {
+                try {
+                    console.log('DE lookup raw response:', data);
+                    const parsed = JSON.parse(data);
+
+                    // Response has items array
+                    const items = parsed.items || [];
+                    if (items.length === 0) {
+                        return reject(new Error(`No DE row found for contactKey: ${contactKey}`));
+                    }
+
+                    // Field values are in the values object
+                    const values = items[0].values || {};
+                    console.log('DE row values:', JSON.stringify(values));
+
+                    resolve({
+                        FromPhoneNumber: values.fromPhonenumber || values.FromPhoneNumber || '',
+                        ToPhoneNumber:   values.toPhonenumber   || values.ToPhoneNumber   || '',
+                        Body:            values.body            || values.Body            || ''
+                    });
+                } catch (e) {
+                    reject(new Error('DE lookup parse error: ' + e.message));
+                }
+            });
+        });
+
+        req.on('error', reject);
+        req.setTimeout(9000, () => {
+            req.destroy();
+            reject(new Error('DE lookup timed out'));
+        });
+        req.end();
+    });
+}
+
 // ─── CONFIG ───────────────────────────────────────────────────────────────────
 app.get('/config.json', (req, res) => {
     res.json({
@@ -46,22 +164,10 @@ app.get('/config.json', (req, res) => {
             }
         },
         "configurationArguments": {
-            "save": {
-                "url": "https://ithreads.onrender.com/save",
-                "verb": "POST"
-            },
-            "validate": {
-                "url": "https://ithreads.onrender.com/validate",
-                "verb": "POST"
-            },
-            "publish": {
-                "url": "https://ithreads.onrender.com/publish",
-                "verb": "POST"
-            },
-            "stop": {
-                "url": "https://ithreads.onrender.com/stop",
-                "verb": "POST"
-            }
+            "save":     { "url": "https://ithreads.onrender.com/save",     "verb": "POST" },
+            "validate": { "url": "https://ithreads.onrender.com/validate", "verb": "POST" },
+            "publish":  { "url": "https://ithreads.onrender.com/publish",  "verb": "POST" },
+            "stop":     { "url": "https://ithreads.onrender.com/stop",     "verb": "POST" }
         },
         "userInterfaces": {
             "configModal": {
@@ -74,75 +180,55 @@ app.get('/config.json', (req, res) => {
 });
 
 // ─── LIFECYCLE ENDPOINTS ──────────────────────────────────────────────────────
-
-app.post('/save', (req, res) => {
-    console.log("SAVE:", JSON.stringify(req.body, null, 2));
-    res.status(200).json({ success: true });
-});
+app.post('/save',     (req, res) => { console.log("SAVE");     res.status(200).json({ success: true }); });
+app.post('/publish',  (req, res) => { console.log("PUBLISH");  res.status(200).json({ success: true }); });
+app.post('/stop',     (req, res) => { console.log("STOP");     res.status(200).json({ success: true }); });
 
 app.post('/validate', (req, res) => {
-    console.log("VALIDATE:", JSON.stringify(req.body, null, 2));
     const inArgs = req.body?.arguments?.execute?.inArguments?.[0];
     if (!inArgs?.messageTitle) {
         return res.status(200).json({ success: false, message: "Message Title is required" });
     }
-    if (!inArgs?.fromPhoneNumber || !inArgs?.toPhoneNumber) {
-        return res.status(200).json({ success: false, message: "Phone number fields must be mapped" });
-    }
-    res.status(200).json({ success: true });
-});
-
-app.post('/publish', (req, res) => {
-    console.log("PUBLISH:", JSON.stringify(req.body, null, 2));
-    res.status(200).json({ success: true });
-});
-
-app.post('/stop', (req, res) => {
-    console.log("STOP:", JSON.stringify(req.body, null, 2));
     res.status(200).json({ success: true });
 });
 
 // ─── EXECUTE ──────────────────────────────────────────────────────────────────
-// Journey Builder calls this once per contact.
-// By the time it arrives here, SFMC has already resolved all {{Contact.Attribute.*}}
-// bindings — so fromPhoneNumber, toPhoneNumber, messageBody are real values.
-//
-// We then POST those resolved values to the SSJS CloudPage, which handles
-// the actual Twilio WhatsApp send + DE logging.
-
 app.post('/execute', async (req, res) => {
     console.log("=== EXECUTE CALLED ===");
     console.log("FULL BODY:", JSON.stringify(req.body, null, 2));
-    
-    const inArgs = req.body?.inArguments?.[0];
-    console.log("fromPhoneNumber:", JSON.stringify(inArgs?.fromPhoneNumber));
-    console.log("toPhoneNumber:",   JSON.stringify(inArgs?.toPhoneNumber));
-    console.log("messageBody:",     JSON.stringify(inArgs?.messageBody));
-    console.log("messageTitle:",    JSON.stringify(inArgs?.messageTitle));
 
     try {
         const inArgs = req.body?.inArguments?.[0];
-        const contactKey = inArgs?.contactKey; //MUSKAN
+
         if (!inArgs) {
             console.error("No inArguments in execute payload");
             return res.status(200).json({ success: false, message: "No inArguments" });
         }
-        const contactData = await lookupContactInDE(contactKey); //MUSKAN
-        // These values are now fully resolved per-contact by SFMC
-        const messageTitle    = inArgs.messageTitle    || '';
-        const fromPhoneNumber = contactData.FromPhoneNumber || '';//MUSKAN inArgs.fromPhoneNumber
-        const toPhoneNumber   = contactData.ToPhoneNumber   || '';//MUSKAN inArgs.toPhoneNumber
-        const messageBody     = contactData.Body     || '';//MUSKAN inArgs.messageBody
 
-        console.log(`Contact — Title: ${messageTitle}, From: ${fromPhoneNumber}, To: ${toPhoneNumber}`);
+        const contactKey  = inArgs.contactKey;
+        const messageTitle = inArgs.messageTitle || '';
 
-        if (!toPhoneNumber || !fromPhoneNumber) {
-            console.error("Missing phone numbers in resolved inArguments");
-            return res.status(200).json({ success: false, message: "Phone number fields are empty after resolution" });
+        console.log(`contactKey: ${contactKey}`);
+        console.log(`messageTitle: ${messageTitle}`);
+
+        if (!contactKey) {
+            return res.status(200).json({ success: false, message: "No contactKey in inArguments" });
         }
 
-        // ── Call the SSJS CloudPage ──────────────────────────────────────────
-        // The SSJS page reads these POST parameters and calls Twilio + logs to DE.
+        // Look up contact's row in DE using SFMC REST API
+        const contactData = await lookupContactInDE(contactKey);
+
+        const fromPhoneNumber = contactData.FromPhoneNumber;
+        const toPhoneNumber   = contactData.ToPhoneNumber;
+        const messageBody     = contactData.Body;
+
+        console.log(`From: ${fromPhoneNumber}, To: ${toPhoneNumber}, Body: ${messageBody}`);
+
+        if (!fromPhoneNumber || !toPhoneNumber) {
+            return res.status(200).json({ success: false, message: "Phone numbers empty in DE row" });
+        }
+
+        // Call SSJS CloudPage → Twilio
         const ssjs_result = await callSsjsCloudPage({
             messageTitle,
             fromPhoneNumber,
@@ -151,7 +237,6 @@ app.post('/execute', async (req, res) => {
         });
 
         console.log("SSJS CloudPage response:", ssjs_result);
-
         res.status(200).json({ success: true, ssjs: ssjs_result });
 
     } catch (err) {
@@ -161,17 +246,8 @@ app.post('/execute', async (req, res) => {
 });
 
 // ─── HELPER: POST to SSJS CloudPage ──────────────────────────────────────────
-/**
- * Sends a URL-encoded POST to your SSJS CloudPage.
- * The CloudPage reads Request.GetFormField() for each param,
- * builds the Twilio payload, sends the WhatsApp message, and logs to your DE.
- *
- * Replace SSJS_CLOUDPAGE_URL with the actual URL of your SSJS execution page.
- */
 function callSsjsCloudPage(params) {
     return new Promise((resolve, reject) => {
-
-        // ── REPLACE this URL with your actual SSJS execution CloudPage URL ──
         const SSJS_CLOUDPAGE_URL = 'https://mc97sb5jfx5jwlk8yysdds5268h1.pub.sfmc-content.com/ak2mph3gijc';
 
         const body = Object.entries(params)
@@ -179,8 +255,6 @@ function callSsjsCloudPage(params) {
             .join('&');
 
         const urlObj = new URL(SSJS_CLOUDPAGE_URL);
-        const isHttps = urlObj.protocol === 'https:';
-        const lib = isHttps ? https : http;
 
         const options = {
             hostname: urlObj.hostname,
@@ -192,7 +266,7 @@ function callSsjsCloudPage(params) {
             }
         };
 
-        const request = lib.request(options, (response) => {
+        const request = https.request(options, (response) => {
             let data = '';
             response.on('data', chunk => data += chunk);
             response.on('end', () => resolve({ statusCode: response.statusCode, body: data }));
