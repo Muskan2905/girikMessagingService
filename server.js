@@ -111,7 +111,14 @@ app.post('/stop', (req, res) => {
 // the actual Twilio WhatsApp send + DE logging.
 
 app.post('/execute', async (req, res) => {
-    console.log("EXECUTE:", JSON.stringify(req.body, null, 2));
+    console.log("=== EXECUTE CALLED ===");
+    console.log("FULL BODY:", JSON.stringify(req.body, null, 2));
+    
+    const inArgs = req.body?.inArguments?.[0];
+    console.log("fromPhoneNumber:", JSON.stringify(inArgs?.fromPhoneNumber));
+    console.log("toPhoneNumber:",   JSON.stringify(inArgs?.toPhoneNumber));
+    console.log("messageBody:",     JSON.stringify(inArgs?.messageBody));
+    console.log("messageTitle:",    JSON.stringify(inArgs?.messageTitle));
 
     try {
         const inArgs = req.body?.inArguments?.[0];
