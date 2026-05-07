@@ -104,6 +104,9 @@ async function lookupContactInDE(contactKey) {
                     console.log('DE lookup raw response:', data);
                     const parsed = JSON.parse(data);
 
+                    console.log('Total items found:', parsed.count || parsed.items?.length);
+                    console.log('Parsed keys:', Object.keys(parsed));
+
                     // Response has items array
                     const items = parsed.items || [];
                     if (items.length === 0) {
