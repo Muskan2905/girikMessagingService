@@ -118,9 +118,9 @@ async function lookupContactInDE(contactKey) {
                     console.log('DE row values:', JSON.stringify(values));
 
                     resolve({
-                        FromPhoneNumber: values.fromPhonenumber || values.FromPhoneNumber || '',
-                        ToPhoneNumber:   values.toPhonenumber   || values.ToPhoneNumber   || '',
-                        Body:            values.body            || values.Body            || ''
+                        FromPhoneNumber: values.fromphonenumber || '',
+                        ToPhoneNumber:   values.tophonenumber   || '',
+                        Body:            values.body            || ''
                     });
                 } catch (e) {
                     reject(new Error('DE lookup parse error: ' + e.message));
