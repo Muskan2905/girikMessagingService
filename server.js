@@ -209,7 +209,7 @@ app.post('/execute', async (req, res) => {
             return res.status(200).json({ success: false, message: "No inArguments" });
         }
 
-        const contactKey  = inArgs.contactKey;
+        const contactKey = inArgs.contactKey || req.body.keyValue;
         const messageTitle = inArgs.messageTitle || '';
 
         console.log(`contactKey: ${contactKey}`);
