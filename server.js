@@ -224,7 +224,9 @@ app.post('/execute', async (req, res) => {
 
         const fromPhoneNumber = contactData.FromPhoneNumber;
         const toPhoneNumber   = contactData.ToPhoneNumber;
-        const messageBody     = contactData.Body;
+        //const messageBody     = contactData.Body;
+        const rawTemplate  = inArgs.templateBody || contactData.Body;
+        const messageBody  = rawTemplate.replace(/{Name}/g, contactData.name || '');
 
         console.log(`From: ${fromPhoneNumber}, To: ${toPhoneNumber}, Body: ${messageBody}`);
 
@@ -245,6 +247,16 @@ app.post('/execute', async (req, res) => {
 
     } catch (err) {
         console.error("EXECUTE error:", err);
+        res.status(200).json({ success: false, message: err.message });
+    }
+});
+
+app.get('/templates', async (req, res) => {
+    try {
+        const templates = await fetchTemplates();
+        res.status(200).json({ success: true, templates });
+    } catch (err) {
+        console.error("TEMPLATES error:", err);
         res.status(200).json({ success: false, message: err.message });
     }
 });
@@ -287,6 +299,49 @@ function callSsjsCloudPage(params) {
     });
 }
 
+async function fetchTemplates() {
+    const token = await getSfmcToken();
+    const TEMPLATES_DE_KEY = '6A0F8F29-E201-4064-AB1F-1986FF072B2A';
+
+    return new Promise((resolve, reject) => {
+        const options = {
+            hostname: `${SFMC_SUBDOMAIN}.rest.marketingcloudapis.com`,
+            path:     `/data/v1/customobjectdata/key/${TEMPLATES_DE_KEY}/rowset`,
+            method:   'GET',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type':  'application/json'
+            }
+        };
+
+        const req = https.request(options, (res) => {
+            let data = '';
+            res.on('data', chunk => data += chunk);
+            res.on('end', () => {
+                try {
+                    const parsed = JSON.parse(data);
+                    const items = parsed.items || [];
+                    const templates = items.map(item => ({
+                        id:          item.values.templateid,
+                        name:        item.values.templatename,
+                        body:        item.values.templatebody,
+                        description: item.values.description || ''
+                    }));
+                    resolve(templates);
+                } catch (e) {
+                    reject(new Error('Templates parse error: ' + e.message));
+                }
+            });
+        });
+
+        req.on('error', reject);
+        req.setTimeout(9000, () => {
+            req.destroy();
+            reject(new Error('Templates fetch timed out'));
+        });
+        req.end();
+    });
+}
 // ─── HEALTH ───────────────────────────────────────────────────────────────────
 app.get('/', (req, res) => {
     res.status(200).json({ status: 'iThreads backend running' });
