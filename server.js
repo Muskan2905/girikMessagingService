@@ -229,7 +229,10 @@ app.post('/execute', async (req, res) => {
         const rawTemplate  = inArgs.templateBody || contactData.Body;
         console.log('rawTemplate:', rawTemplate);
         console.log('contactData.name:', contactData.name);
-        const messageBody  = rawTemplate.replace(/{Name}/g, contactData.name || '');
+        //const messageBody  = rawTemplate.replace(/{Name}/g, contactData.name || '');
+        const messageBody = rawTemplate.replace(/{(\w+)}/g, function(match, fieldName) {
+            return contactData[fieldName.toLowerCase()] || match;
+        });
         console.log('resolvedBody:', messageBody);
 
         console.log(`From: ${fromPhoneNumber}, To: ${toPhoneNumber}, Body: ${messageBody}`);
