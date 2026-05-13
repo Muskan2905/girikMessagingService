@@ -16,9 +16,9 @@ app.use((req, res, next) => {
 });
 
 // ─── SFMC CREDENTIALS ─────────────────────────────────────────────────────────
-const SFMC_CLIENT_ID     = '4mjcni9capeumlxvreujs3fx';
-const SFMC_CLIENT_SECRET = 'SFMC_XxDYw5qbruA8UrQFu0C2Wvx5sizZfbrM48M5qSY8gZvGJMvDlGf0cfd9387';
-const SFMC_MID           = '10966026';       // replace with your actual MID
+const SFMC_CLIENT_ID     = process.env.SFMC_CLIENT_ID;
+const SFMC_CLIENT_SECRET = process.env.SFMC_CLIENT_SECRET;
+const SFMC_MID           = process.env.SFMC_MID;
 const SFMC_SUBDOMAIN     = 'mc97sb5jfx5jwlk8yysdds5268h1';
 const SFMC_DE_EXTERNAL_KEY = 'FC88FEB4-78E7-409F-AB25-25177C4F9EB1'; // Twilio Test SMS Audience
 
