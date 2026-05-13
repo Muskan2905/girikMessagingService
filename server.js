@@ -118,6 +118,7 @@ async function lookupContactInDE(contactKey) {
                     console.log('DE row values:', JSON.stringify(values));
 
                     resolve({
+                        name:            values.name            || '',
                         FromPhoneNumber: values.fromphonenumber || '',
                         ToPhoneNumber:   values.tophonenumber   || '',
                         Body:            values.body            || ''
