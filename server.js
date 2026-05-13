@@ -231,6 +231,7 @@ app.post('/execute', async (req, res) => {
         console.log('contactData.name:', contactData.name);
         //const messageBody  = rawTemplate.replace(/{Name}/g, contactData.name || '');
         const messageBody = rawTemplate.replace(/{(\w+)}/g, function(match, fieldName) {
+            console.log('match:', match, 'fieldName:', fieldName, 'value:', contactData[fieldName])
             return contactData[fieldName.toLowerCase()] || match;
         });
         console.log('resolvedBody:', messageBody);
