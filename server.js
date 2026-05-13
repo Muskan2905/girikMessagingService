@@ -226,7 +226,10 @@ app.post('/execute', async (req, res) => {
         const toPhoneNumber   = contactData.ToPhoneNumber;
         //const messageBody     = contactData.Body;
         const rawTemplate  = inArgs.templateBody || contactData.Body;
+        console.log('rawTemplate:', rawTemplate);
+        console.log('contactData.name:', contactData.name);
         const messageBody  = rawTemplate.replace(/{Name}/g, contactData.name || '');
+        console.log('resolvedBody:', messageBody);
 
         console.log(`From: ${fromPhoneNumber}, To: ${toPhoneNumber}, Body: ${messageBody}`);
 
