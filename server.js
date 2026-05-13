@@ -119,9 +119,9 @@ async function lookupContactInDE(contactKey) {
 
                     resolve({
                         name:            values.name            || '',
-                        FromPhoneNumber: values.fromphonenumber || '',
-                        ToPhoneNumber:   values.tophonenumber   || '',
-                        Body:            values.body            || ''
+                        fromphonenumber: values.fromphonenumber || '',
+                        tophonenumber:   values.tophonenumber   || '',
+                        body:            values.body            || ''
                     });
                 } catch (e) {
                     reject(new Error('DE lookup parse error: ' + e.message));
@@ -223,8 +223,8 @@ app.post('/execute', async (req, res) => {
         // Look up contact's row in DE using SFMC REST API
         const contactData = await lookupContactInDE(contactKey);
 
-        const fromPhoneNumber = contactData.FromPhoneNumber;
-        const toPhoneNumber   = contactData.ToPhoneNumber;
+        const fromPhoneNumber = contactData.fromphonenumber;
+        const toPhoneNumber   = contactData.tophonenumber;
         //const messageBody     = contactData.Body;
         const rawTemplate  = inArgs.templateBody || contactData.Body;
         console.log('rawTemplate:', rawTemplate);
