@@ -272,7 +272,26 @@ app.post('/execute', async (req, res) => {
                     : "";
             }
         );*/
-        const messageBody = rawTemplate;
+        //const messageBody = rawTemplate;
+        const messageBody = rawTemplate.replace(
+    /{([^}]+)}/g,
+    function(match, fieldName) {
+        // normalize: remove spaces, lowercase
+        const normalizedField = fieldName.replace(/\s+/g, '').toLowerCase();
+        
+        // find matching key in inArgs (also normalized)
+        const matchedKey = Object.keys(inArgs).find(function(key) {
+            return key.replace(/\s+/g, '').toLowerCase() === normalizedField;
+        });
+        
+        const value = matchedKey ? inArgs[matchedKey] : undefined;
+        console.log('match:', match, 'fieldName:', fieldName, 'normalizedField:', normalizedField, 'value:', value);
+        
+        return value !== undefined && value !== null && value !== ''
+            ? String(value)
+            : match; // keep original if not found
+    }
+);
         console.log('resolvedBody:', messageBody);
 
         console.log(`From: ${fromPhoneNumber}, To: ${toPhoneNumber}, Body: ${messageBody}`);
