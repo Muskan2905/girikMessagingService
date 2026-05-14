@@ -300,7 +300,7 @@ app.post('/execute', async (req, res) => {
     }
 });
 
-app.get('/templates', async (req, res) => {
+/*app.get('/templates', async (req, res) => {
     try {
         const templates = await fetchTemplates();
         res.status(200).json({ success: true, templates });
@@ -308,7 +308,7 @@ app.get('/templates', async (req, res) => {
         console.error("TEMPLATES error:", err);
         res.status(200).json({ success: false, message: err.message });
     }
-});
+});*/
 
 // ─── HELPER: POST to SSJS CloudPage ──────────────────────────────────────────
 function callSsjsCloudPage(params) {
