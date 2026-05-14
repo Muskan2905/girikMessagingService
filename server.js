@@ -19,7 +19,7 @@ app.use((req, res, next) => {
 //const SFMC_CLIENT_ID     = process.env.SFMC_CLIENT_ID;
 //const SFMC_CLIENT_SECRET = process.env.SFMC_CLIENT_SECRET;
 //const SFMC_MID           = process.env.SFMC_MID;
-const SFMC_SUBDOMAIN     = 'mc97sb5jfx5jwlk8yysdds5268h1';
+//const SFMC_SUBDOMAIN     = 'mc97sb5jfx5jwlk8yysdds5268h1';
 //const SFMC_DE_EXTERNAL_KEY = 'FC88FEB4-78E7-409F-AB25-25177C4F9EB1'; // Twilio Test SMS Audience
 
 // ─── SFMC TOKEN CACHE ─────────────────────────────────────────────────────────
