@@ -20,13 +20,13 @@ const SFMC_CLIENT_ID     = process.env.SFMC_CLIENT_ID;
 const SFMC_CLIENT_SECRET = process.env.SFMC_CLIENT_SECRET;
 const SFMC_MID           = process.env.SFMC_MID;
 const SFMC_SUBDOMAIN     = 'mc97sb5jfx5jwlk8yysdds5268h1';
-const SFMC_DE_EXTERNAL_KEY = 'FC88FEB4-78E7-409F-AB25-25177C4F9EB1'; // Twilio Test SMS Audience
+//const SFMC_DE_EXTERNAL_KEY = 'FC88FEB4-78E7-409F-AB25-25177C4F9EB1'; // Twilio Test SMS Audience
 
 // ─── SFMC TOKEN CACHE ─────────────────────────────────────────────────────────
 let sfmcToken = null;
 let sfmcTokenExpiry = 0;
 
-async function getSfmcToken() {
+/*async function getSfmcToken() {
     const now = Date.now();
     if (sfmcToken && now < sfmcTokenExpiry) {
         return sfmcToken;
@@ -74,10 +74,10 @@ async function getSfmcToken() {
         req.write(body);
         req.end();
     });
-}
+}*/
 
 // ─── LOOKUP CONTACT IN DE ─────────────────────────────────────────────────────
-async function lookupContactInDE(contactKey) {
+/*async function lookupContactInDE(contactKey) {
     const token = await getSfmcToken();
 
     // Use SFMC REST API to query the DE by Name (subscriber key)
@@ -123,7 +123,7 @@ async function lookupContactInDE(contactKey) {
                         alternatephonenumber: values.alternatephonenumber || '',
                         body:            values.body            || ''
                     });*/
-                    const normalizedValues = {};
+                    /*const normalizedValues = {};
 
                     Object.keys(values).forEach(key => {
                     
@@ -145,7 +145,7 @@ async function lookupContactInDE(contactKey) {
         });
         req.end();
     });
-}
+}*/
 
 // ─── CONFIG ───────────────────────────────────────────────────────────────────
 app.get('/config.json', (req, res) => {
@@ -230,7 +230,7 @@ app.post('/execute', async (req, res) => {
         }
 
         // Look up contact's row in DE using SFMC REST API
-        const contactData = await lookupContactInDE(contactKey);
+        //const contactData = await lookupContactInDE(contactKey);
 
         //const fromPhoneNumber = contactData.fromphonenumber;
         //const toPhoneNumber   = contactData.tophonenumber;
@@ -255,14 +255,26 @@ app.post('/execute', async (req, res) => {
         }
         const fromPhoneNumber = inArgs.fromPhoneNumber; // directly from input
         //const messageBody     = contactData.Body;
-        const rawTemplate  = inArgs.templateBody || contactData.Body;
+        const rawTemplate = inArgs.templateBody || '';
         console.log('rawTemplate:', rawTemplate);
-        console.log('contactData.name:', contactData.name);
+        //console.log('contactData.name:', contactData.name);
         //const messageBody  = rawTemplate.replace(/{Name}/g, contactData.name || '');
-        const messageBody = rawTemplate.replace(/{(\w+)}/g, function(match, fieldName) {
-            console.log('match:', match, 'fieldName:', fieldName, 'value:', contactData[fieldName])
-            return contactData[fieldName.toLowerCase()] || match;
-        });
+        const messageBody = rawTemplate.replace(
+            /{(\w+)}/g,
+            function(match, fieldName) {
+        
+                console.log(
+                    'match:',
+                    match,
+                    'fieldName:',
+                    fieldName,
+                    'value:',
+                    inArgs[fieldName]
+                );
+        
+                return inArgs[fieldName] || match;
+            }
+        );
         console.log('resolvedBody:', messageBody);
 
         console.log(`From: ${fromPhoneNumber}, To: ${toPhoneNumber}, Body: ${messageBody}`);
@@ -336,7 +348,7 @@ function callSsjsCloudPage(params) {
     });
 }
 
-async function fetchTemplates() {
+/*async function fetchTemplates() {
     const token = await getSfmcToken();
     const TEMPLATES_DE_KEY = '6A0F8F29-E201-4064-AB1F-1986FF072B2A';
 
@@ -378,7 +390,7 @@ async function fetchTemplates() {
         });
         req.end();
     });
-}
+}*/
 // ─── HEALTH ───────────────────────────────────────────────────────────────────
 app.get('/', (req, res) => {
     res.status(200).json({ status: 'Girik Messaging Service running' });
