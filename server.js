@@ -1,7 +1,7 @@
 const express = require('express');
-const path    = require('path');
+//const path    = require('path');
 const https   = require('https');
-const http    = require('http');
+//const http    = require('http');
 const app     = express();
 
 app.use(express.json());
@@ -225,7 +225,7 @@ app.post('/execute', async (req, res) => {
 
         //const fromPhoneNumber = contactData.fromphonenumber;
         //const toPhoneNumber   = contactData.tophonenumber;
-        const toPhoneField  = inArgs.toPhoneField; // "PrimaryPhoneNumber" or "AlternatePhoneNumber"
+        //const toPhoneField  = inArgs.toPhoneField; // "PrimaryPhoneNumber" or "AlternatePhoneNumber"
         //const toPhoneNumber = contactData[toPhoneField.toLowerCase()];
         const toPhoneNumber = contactData[inArgs.toPhoneField.toLowerCase()];
         if (!toPhoneNumber) {
@@ -249,7 +249,7 @@ app.post('/execute', async (req, res) => {
 
         console.log(`From: ${fromPhoneNumber}, To: ${toPhoneNumber}, Body: ${messageBody}`);
 
-        if (!fromPhoneNumber || !toPhoneNumber) {
+        if (!fromPhoneNumber) {
             return res.status(200).json({ success: false, message: "Phone numbers empty in DE row" });
         }
 
