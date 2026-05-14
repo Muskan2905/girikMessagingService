@@ -157,7 +157,7 @@ app.get('/config.json', (req, res) => {
         "arguments": {
             "execute": {
                 "inArguments": [],
-                "url": "https://ithreads.onrender.com/execute",
+                "url": "https://girikmessagingservice.onrender.com/execute",
                 "verb": "POST",
                 "body": "",
                 "header": "",
@@ -169,10 +169,10 @@ app.get('/config.json', (req, res) => {
             }
         },
         "configurationArguments": {
-            "save":     { "url": "https://ithreads.onrender.com/save",     "verb": "POST" },
-            "validate": { "url": "https://ithreads.onrender.com/validate", "verb": "POST" },
-            "publish":  { "url": "https://ithreads.onrender.com/publish",  "verb": "POST" },
-            "stop":     { "url": "https://ithreads.onrender.com/stop",     "verb": "POST" }
+            "save":     { "url": "https://girikmessagingservice.onrender.com/save",     "verb": "POST" },
+            "validate": { "url": "https://girikmessagingservice.onrender.com/validate", "verb": "POST" },
+            "publish":  { "url": "https://girikmessagingservice.onrender.com/publish",  "verb": "POST" },
+            "stop":     { "url": "https://girikmessagingservice.onrender.com/stop",     "verb": "POST" }
         },
         "userInterfaces": {
             "configModal": {
@@ -363,9 +363,9 @@ async function fetchTemplates() {
 }
 // ─── HEALTH ───────────────────────────────────────────────────────────────────
 app.get('/', (req, res) => {
-    res.status(200).json({ status: 'iThreads backend running' });
+    res.status(200).json({ status: 'Girik Messaging Service running' });
 });
 
 // ─── START ────────────────────────────────────────────────────────────────────
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`iThreads backend on port ${PORT}`));
+app.listen(PORT, () => console.log(`Girik Messaging Service backend on port ${PORT}`));
