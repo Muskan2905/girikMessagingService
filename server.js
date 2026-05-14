@@ -117,12 +117,21 @@ async function lookupContactInDE(contactKey) {
                     const values = items[0].values || {};
                     console.log('DE row values:', JSON.stringify(values));
 
-                    resolve({
+                    /*resolve({
                         name:            values.name            || '',
                         primaryphonenumber:   values.primaryphonenumber   || '',
                         alternatephonenumber: values.alternatephonenumber || '',
                         body:            values.body            || ''
+                    });*/
+                    const normalizedValues = {};
+
+                    Object.keys(values).forEach(key => {
+                    
+                        normalizedValues[key.toLowerCase()] = values[key];
+                    
                     });
+                    
+                    resolve(normalizedValues);
                 } catch (e) {
                     reject(new Error('DE lookup parse error: ' + e.message));
                 }
