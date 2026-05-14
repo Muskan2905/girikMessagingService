@@ -119,8 +119,8 @@ async function lookupContactInDE(contactKey) {
 
                     resolve({
                         name:            values.name            || '',
-                        fromphonenumber: values.fromphonenumber || '',
-                        tophonenumber:   values.tophonenumber   || '',
+                        primaryphonenumber:   values.primaryphonenumber   || '',
+                        alternatephonenumber: values.alternatephonenumber || '',
                         body:            values.body            || ''
                     });
                 } catch (e) {
@@ -226,7 +226,8 @@ app.post('/execute', async (req, res) => {
         //const fromPhoneNumber = contactData.fromphonenumber;
         //const toPhoneNumber   = contactData.tophonenumber;
         const toPhoneField  = inArgs.toPhoneField; // "PrimaryPhoneNumber" or "AlternatePhoneNumber"
-        const toPhoneNumber = contactData[toPhoneField.toLowerCase()];
+        //const toPhoneNumber = contactData[toPhoneField.toLowerCase()];
+        const toPhoneNumber = contactData[inArgs.toPhoneField.toLowerCase()];
         const fromPhoneNumber = inArgs.fromPhoneNumber; // directly from input
         //const messageBody     = contactData.Body;
         const rawTemplate  = inArgs.templateBody || contactData.Body;
