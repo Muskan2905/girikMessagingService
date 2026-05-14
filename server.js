@@ -228,6 +228,13 @@ app.post('/execute', async (req, res) => {
         const toPhoneField  = inArgs.toPhoneField; // "PrimaryPhoneNumber" or "AlternatePhoneNumber"
         //const toPhoneNumber = contactData[toPhoneField.toLowerCase()];
         const toPhoneNumber = contactData[inArgs.toPhoneField.toLowerCase()];
+        if (!toPhoneNumber) {
+            console.error(`Phone field "${inArgs.toPhoneField}" is empty for contact: ${contactKey}`);
+            return res.status(200).json({ 
+                success: false, 
+                message: `Phone field "${inArgs.toPhoneField}" is empty for this contact` 
+            });
+        }
         const fromPhoneNumber = inArgs.fromPhoneNumber; // directly from input
         //const messageBody     = contactData.Body;
         const rawTemplate  = inArgs.templateBody || contactData.Body;
