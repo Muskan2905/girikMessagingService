@@ -150,8 +150,8 @@ app.get('/config.json', (req, res) => {
         "type": "REST",
         "lang": {
             "en-US": {
-                "name": "iThreads Post",
-                "description": "Send a WhatsApp message per contact via Twilio"
+                "name": "Girik SMS",
+                "description": "Sends an SMS per contact via Twilio"
             }
         },
         "arguments": {
