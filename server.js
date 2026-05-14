@@ -83,7 +83,7 @@ async function lookupContactInDE(contactKey) {
     // Use SFMC REST API to query the DE by Name (subscriber key)
     //const filter = encodeURIComponent(`Name=${contactKey}`);
     // NEW - correct SFMC filter syntax
-    const apiPath  = `/data/v1/customobjectdata/key/${SFMC_DE_EXTERNAL_KEY}/rowset?$filter=Name%20eq%20%27${encodeURIComponent(contactKey)}%27`;
+    const apiPath  = `/data/v1/customobjectdata/key/${SFMC_DE_EXTERNAL_KEY}/rowset?$filter=ContactId%20eq%20%27${encodeURIComponent(contactKey)}%27`;
 
     return new Promise((resolve, reject) => {
         const options = {
