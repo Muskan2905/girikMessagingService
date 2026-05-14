@@ -223,8 +223,11 @@ app.post('/execute', async (req, res) => {
         // Look up contact's row in DE using SFMC REST API
         const contactData = await lookupContactInDE(contactKey);
 
-        const fromPhoneNumber = contactData.fromphonenumber;
-        const toPhoneNumber   = contactData.tophonenumber;
+        //const fromPhoneNumber = contactData.fromphonenumber;
+        //const toPhoneNumber   = contactData.tophonenumber;
+        const toPhoneField  = inArgs.toPhoneField; // "PrimaryPhoneNumber" or "AlternatePhoneNumber"
+        const toPhoneNumber = contactData[toPhoneField.toLowerCase()];
+        const fromPhoneNumber = inArgs.fromPhoneNumber; // directly from input
         //const messageBody     = contactData.Body;
         const rawTemplate  = inArgs.templateBody || contactData.Body;
         console.log('rawTemplate:', rawTemplate);
