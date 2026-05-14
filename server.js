@@ -236,12 +236,21 @@ app.post('/execute', async (req, res) => {
         //const toPhoneNumber   = contactData.tophonenumber;
         //const toPhoneField  = inArgs.toPhoneField; // "PrimaryPhoneNumber" or "AlternatePhoneNumber"
         //const toPhoneNumber = contactData[toPhoneField.toLowerCase()];
-        const toPhoneNumber = contactData[inArgs.toPhoneField.toLowerCase()];
-        if (!toPhoneNumber) {
+        //const toPhoneNumber = contactData[inArgs.toPhoneField.toLowerCase()];
+        const toPhoneNumber = inArgs.toPhoneField;
+        /*if (!toPhoneNumber) {
             console.error(`Phone field "${inArgs.toPhoneField}" is empty for contact: ${contactKey}`);
             return res.status(200).json({ 
                 success: false, 
                 message: `Phone field "${inArgs.toPhoneField}" is empty for this contact` 
+            });
+        }*/
+        if (!toPhoneNumber) {
+            console.error(`toPhoneField resolved empty for contact: ${contactKey}`);
+        
+            return res.status(200).json({
+                success: false,
+                message: 'Resolved phone number is empty'
             });
         }
         const fromPhoneNumber = inArgs.fromPhoneNumber; // directly from input
