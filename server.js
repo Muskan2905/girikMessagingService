@@ -199,7 +199,10 @@ app.post('/publish',  (req, res) => { console.log("PUBLISH");  res.status(200).j
 app.post('/stop',     (req, res) => { console.log("STOP");     res.status(200).json({ success: true }); });
 
 app.post('/validate', (req, res) => {
-    const inArgs = req.body?.arguments?.execute?.inArguments?.[0];
+    //const inArgs = req.body?.arguments?.execute?.inArguments?.[0];
+    const inArgs = (req.body?.inArguments || []).reduce(function(acc, obj) {
+    return Object.assign(acc, obj);
+}, {});
     if (!inArgs?.messageTitle) {
         return res.status(200).json({ success: false, message: "Message Title is required" });
     }
