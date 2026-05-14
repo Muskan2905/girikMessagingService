@@ -260,19 +260,16 @@ app.post('/execute', async (req, res) => {
         //console.log('contactData.name:', contactData.name);
         //const messageBody  = rawTemplate.replace(/{Name}/g, contactData.name || '');
         const messageBody = rawTemplate.replace(
-            /{(\w+)}/g,
+            /{([^}]+)}/g,
             function(match, fieldName) {
         
-                console.log(
-                    'match:',
-                    match,
-                    'fieldName:',
-                    fieldName,
-                    'value:',
-                    inArgs[fieldName]
-                );
-        
-                return inArgs[fieldName] || match;
+                const value = inArgs[fieldName];
+
+                console.log('match:', match, 'fieldName:', fieldName, 'value:', value);
+            
+                return value !== undefined && value !== null
+                    ? String(value)
+                    : "";
             }
         );
         console.log('resolvedBody:', messageBody);
