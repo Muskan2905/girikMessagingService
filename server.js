@@ -199,10 +199,7 @@ app.post('/publish',  (req, res) => { console.log("PUBLISH");  res.status(200).j
 app.post('/stop',     (req, res) => { console.log("STOP");     res.status(200).json({ success: true }); });
 
 app.post('/validate', (req, res) => {
-    //const inArgs = req.body?.arguments?.execute?.inArguments?.[0];
-    const inArgs = (req.body?.inArguments || []).reduce(function(acc, obj) {
-    return Object.assign(acc, obj);
-}, {});
+    const inArgs = req.body?.arguments?.execute?.inArguments?.[0];
     if (!inArgs?.messageTitle) {
         return res.status(200).json({ success: false, message: "Message Title is required" });
     }
@@ -215,8 +212,10 @@ app.post('/execute', async (req, res) => {
     console.log("FULL BODY:", JSON.stringify(req.body, null, 2));
 
     try {
-        const inArgs = req.body?.inArguments?.[0];
-
+        //const inArgs = req.body?.inArguments?.[0];
+        const inArgs = (req.body?.inArguments || []).reduce(function(acc, obj) {
+            return Object.assign(acc, obj);
+        }, {});
         if (!inArgs) {
             console.error("No inArguments in execute payload");
             return res.status(200).json({ success: false, message: "No inArguments" });
@@ -263,7 +262,7 @@ app.post('/execute', async (req, res) => {
         //console.log('contactData.name:', contactData.name);
         //const messageBody  = rawTemplate.replace(/{Name}/g, contactData.name || '');
         /*const messageBody = rawTemplate.replace(
-            /{([^}]+)}/g,
+            /{(\w+)}/g,
             function(match, fieldName) {
         
                 const value = inArgs[fieldName];
