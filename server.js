@@ -212,10 +212,10 @@ app.post('/execute', async (req, res) => {
     console.log("FULL BODY:", JSON.stringify(req.body, null, 2));
 
     try {
-        //const inArgs = req.body?.inArguments?.[0];
-        const inArgs = (req.body?.inArguments || []).reduce(function(acc, obj) {
+        const inArgs = req.body?.inArguments?.[0];
+        /*const inArgs = (req.body?.inArguments || []).reduce(function(acc, obj) {
             return Object.assign(acc, obj);
-        }, {});
+        }, {});*/
         if (!inArgs) {
             console.error("No inArguments in execute payload");
             return res.status(200).json({ success: false, message: "No inArguments" });
@@ -261,7 +261,7 @@ app.post('/execute', async (req, res) => {
         console.log('rawTemplate:', rawTemplate);
         //console.log('contactData.name:', contactData.name);
         //const messageBody  = rawTemplate.replace(/{Name}/g, contactData.name || '');
-        /*const messageBody = rawTemplate.replace(
+        const messageBody = rawTemplate.replace(
             /{(\w+)}/g,
             function(match, fieldName) {
         
@@ -273,9 +273,9 @@ app.post('/execute', async (req, res) => {
                     ? String(value)
                     : "";
             }
-        );*/
+        );
         //const messageBody = rawTemplate;
-        const messageBody = rawTemplate.replace(
+        /*const messageBody = rawTemplate.replace(
     /{([^}]+)}/g,
     function(match, fieldName) {
         // normalize: remove spaces, lowercase
@@ -293,7 +293,7 @@ app.post('/execute', async (req, res) => {
             ? String(value)
             : match; // keep original if not found
     }
-);
+);*/
         console.log('resolvedBody:', messageBody);
 
         console.log(`From: ${fromPhoneNumber}, To: ${toPhoneNumber}, Body: ${messageBody}`);
