@@ -261,7 +261,7 @@ app.post('/execute', async (req, res) => {
         console.log('rawTemplate:', rawTemplate);
         //console.log('contactData.name:', contactData.name);
         //const messageBody  = rawTemplate.replace(/{Name}/g, contactData.name || '');
-        const messageBody = rawTemplate.replace(
+        /*const messageBody = rawTemplate.replace(
             /{(\w+)}/g,
             function(match, fieldName) {
         
@@ -273,7 +273,48 @@ app.post('/execute', async (req, res) => {
                     ? String(value)
                     : "";
             }
+        );*/
+
+        const messageBody = rawTemplate.replace(
+    /{([^}]+)}/g,
+    function(match, fieldName) {
+
+        // normalize merge field name
+        const normalizedField =
+            fieldName.replace(/\s+/g, '').toLowerCase();
+
+        // find matching inArgument key
+        const matchedKey =
+            Object.keys(inArgs).find(function(key) {
+
+                return (
+                    key.replace(/\s+/g, '').toLowerCase() ===
+                    normalizedField
+                );
+
+            });
+
+        const value =
+            matchedKey
+                ? inArgs[matchedKey]
+                : '';
+
+        console.log(
+            'match:',
+            match,
+            'fieldName:',
+            fieldName,
+            'matchedKey:',
+            matchedKey,
+            'value:',
+            value
         );
+
+        return value !== undefined && value !== null
+            ? String(value)
+            : '';
+    }
+);
         //const messageBody = rawTemplate;
         /*const messageBody = rawTemplate.replace(
     /{([^}]+)}/g,
